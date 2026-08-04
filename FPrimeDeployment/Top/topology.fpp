@@ -16,6 +16,7 @@ module FPrimeApp {
   # ----------------------------------------------------------------------
     import CdhCore.Subtopology
     import ComCcsds.SpacePacketFraming
+    import CfsTlmFraming.Framing
 
   # ----------------------------------------------------------------------
   # Instances used in the topology
@@ -65,10 +66,19 @@ module FPrimeApp {
     }
 
     connections CfsBridge {
-      # Downlink: framing layer -> bridge -> cFS software bus
-      ComCcsds.SpacePacketFraming.dataOut -> cfsBridge.dataIn
-      cfsBridge.dataReturnOut             -> ComCcsds.SpacePacketFraming.dataReturnIn
-      cfsBridge.comStatusOut              -> ComCcsds.SpacePacketFraming.comStatusIn
+      # Downlink: framing layer -> cFS telemetry framer -> bridge -> cFS software bus.
+      # The cFS telemetry framer inserts the cFS telemetry secondary header so telemetry
+      # traverses the software bus as valid cFS telemetry packets.
+      ComCcsds.SpacePacketFraming.dataOut  -> CfsTlmFraming.Framing.dataIn
+      CfsTlmFraming.Framing.dataReturnOut  -> ComCcsds.SpacePacketFraming.dataReturnIn
+      CfsTlmFraming.Framing.comStatusOut   -> ComCcsds.SpacePacketFraming.comStatusIn
+      CfsTlmFraming.Framing.dataOut        -> cfsBridge.dataIn
+      cfsBridge.dataReturnOut              -> CfsTlmFraming.Framing.dataReturnIn
+      cfsBridge.comStatusOut               -> CfsTlmFraming.Framing.comStatusIn
+
+      # cFS telemetry framer buffer allocations
+      CfsTlmFraming.Framing.bufferAllocate   -> ComCcsds.SpacePacketFraming.bufferGetCallee
+      CfsTlmFraming.Framing.bufferDeallocate -> ComCcsds.SpacePacketFraming.bufferSendIn
 
       # Uplink: cFS software bus -> bridge -> framing layer
       cfsBridge.dataOut                         -> ComCcsds.SpacePacketFraming.dataIn
