@@ -94,7 +94,9 @@ CFE_Status_t FPRIME_APP_Init(FPrimeApp::TopologyState& inputs)
     }
     if (status == CFE_SUCCESS)
     {
-        status = FPrimeApp::cfsBridge.subscribe(ComCfg::Apid::FW_PACKET_COMMAND);
+        // F Prime commands arrive as cFS command packets (secondary header flag set)
+        status = FPrimeApp::cfsBridge.subscribeCfs(ComCfg::Apid::FW_PACKET_COMMAND,
+                                                   FPrimeCfs::CfsBridge::CfsMessageType::COMMAND);
         if (status == CFE_SUCCESS)
         {
             status = FPrimeApp::cfsBridge.subscribeCfs(ComCfg::Apid::CFS_SCH_TICK,
